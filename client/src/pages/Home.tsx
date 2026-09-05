@@ -1,33 +1,21 @@
-import { useAuth } from "@/_core/hooks/useAuth";
-import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
-import { Streamdown } from 'streamdown';
+import { useEffect, useRef, useState } from "react";
+import { Link } from "wouter";
+import { ArrowDown, ArrowUpRight, ChevronRight, Disc3, Download, Headphones, Instagram, Music2, Pause, Play, Repeat2, Shuffle, SkipBack, SkipForward, Volume2, VolumeX, Youtube } from "lucide-react";
 
-/**
- * All content in this page are only for example, replace with your own feature implementation
- * When building pages, remember your instructions in Frontend Workflow, Frontend Best Practices, Design Guide and Common Pitfalls
- */
-export default function Home() {
-  // The useAuth hook provides authentication state.
-  // To implement login/logout, call logout(), or start login from an event
-  // handler: onClick={() => startLogin()} (imported from "@/const"). Never call
-  // startLogin() during render (no href={startLogin()}) — it mints a one-time
-  // nonce cookie and must run only at the moment of navigation.
-  let { user, loading, error, isAuthenticated, logout } = useAuth();
+type HomeProps = { section?: string };
+const studioImage = "/manus-storage/atonic-studio_cdfa93a4.jpg";
+const waveImage = "/manus-storage/atonic-wave_66e69cbb.jpg";
 
-  // If theme is switchable in App.tsx, we can implement theme toggling like this:
-  // const { theme, toggleTheme } = useTheme();
+function Player() { const [playing, setPlaying] = useState(false); const [muted, setMuted] = useState(false); const [progress, setProgress] = useState(34); const timer = useRef<number | null>(null); useEffect(() => { if (playing) timer.current = window.setInterval(() => setProgress(p => p >= 100 ? 0 : p + 1), 1500); return () => { if (timer.current) window.clearInterval(timer.current); }; }, [playing]); return <div className="player"><div className="player-art"><img src={waveImage} alt="Tired release artwork"/><div className="player-art-label">A.T.</div></div><div className="player-track"><div className="track-meta"><div><strong>Tired</strong><span>A.Tonic · Original</span></div><span className="track-time">{progress === 0 ? "0:00" : "1:12"} / 3:28</span></div><input aria-label="Seek track" type="range" min="0" max="100" value={progress} onChange={e => setProgress(Number(e.target.value))}/><div className="player-controls"><button aria-label="Shuffle"><Shuffle size={15}/></button><button aria-label="Previous"><SkipBack size={17}/></button><button className="play-button" onClick={() => setPlaying(!playing)} aria-label={playing ? "Pause" : "Play"}>{playing ? <Pause size={18}/> : <Play size={18} fill="currentColor"/>}</button><button aria-label="Next"><SkipForward size={17}/></button><button aria-label="Repeat"><Repeat2 size={15}/></button></div></div><div className="player-volume"><button onClick={() => setMuted(!muted)} aria-label="Mute">{muted ? <VolumeX size={17}/> : <Volume2 size={17}/>}</button><div className="volume-line"><span style={{width: muted ? "0%" : "64%"}}/></div></div></div> }
 
-  return (
-    <div className="min-h-screen flex flex-col">
-      <main>
-        {/* Example: lucide-react for icons */}
-        <Loader2 className="animate-spin" />
-        Example Page
-        {/* Example: Streamdown for markdown rendering */}
-        <Streamdown>Any **markdown** content</Streamdown>
-        <Button variant="default">Example Button</Button>
-      </main>
-    </div>
-  );
-}
+function Hero() { return <section className="hero container"><div className="hero-copy"><div className="eyebrow red-eyebrow"><span className="live-dot"/> Official artist website</div><h1>Sometimes, you are not weak.<em>You are simply tired.</em></h1><p className="hero-lede">A.Tonic makes honest music for the quiet battles — Afrobeat shaped by feeling, reflection and the things we rarely say out loud.</p><div className="hero-cta"><a href="#listen" className="button button-red"><Play size={15} fill="currentColor"/> Listen to Tired</a><Link href="/about" className="text-link">Meet A.Tonic <ArrowUpRight size={15}/></Link></div></div><div className="hero-visual"><div className="hero-visual-bg"/><div className="hero-card"><img src={studioImage} alt="A musician in a studio"/><div className="hero-card-overlay"><span>01 / 01</span><strong>A.Tonic</strong></div></div><div className="hero-stamp">A<br/>T</div></div></section> }
+
+function ReleaseFeature() { return <section className="release-feature container" id="listen"><div className="section-label"><span>01</span><span>Featured release</span></div><div className="release-layout"><div className="release-art"><img src={waveImage} alt="Tired cover artwork"/><div className="art-caption">Tired<br/><span>Single · 2026</span></div></div><div className="release-detail"><div className="eyebrow">Now playing / 01</div><h2>Tired</h2><p className="release-subtitle">An Emotional Afrobeat Journey</p><p className="release-description">“Tired” is an emotional journey through exhaustion, pain, and silent struggles. This song speaks for anyone carrying heavy burdens while pretending everything is okay.</p><div className="release-meta"><div><span>Written & composed by</span><strong>Akin S. Sokpah</strong></div><div><span>Produced by</span><strong>A.Tonic</strong></div><div><span>Genre</span><strong>Afrobeat</strong></div><div><span>Copyright</span><strong>℗ 2026 A.Tonic</strong></div></div><div className="release-actions"><button className="button button-dark"><Headphones size={16}/> Play release</button><Link href="/licensing" className="button button-outline">License this track <ArrowUpRight size={15}/></Link></div></div></div><Player/></section> }
+
+function LatestGrid() { return <section className="latest container"><div className="section-heading"><div><div className="section-label"><span>02</span><span>Inside the world</span></div><h2>More from A.Tonic</h2></div><Link href="/releases" className="text-link">Explore library <ArrowUpRight size={15}/></Link></div><div className="latest-grid"><Link href="/releases" className="latest-card large-card"><img src={waveImage} alt="Tired artwork"/><div className="card-gradient"/><div className="card-copy"><span>Release · 2026</span><strong>Tired</strong><small>Original single</small></div></Link><Link href="/videos" className="latest-card studio-card"><img src={studioImage} alt="Studio session"/><div className="card-gradient"/><div className="card-copy"><span>Visual diary</span><strong>In the room</strong><small>Coming soon</small></div><div className="play-badge"><Play size={16} fill="currentColor"/></div></Link><div className="manifesto-card"><Disc3 size={24}/><p>“I make music for the moments that don't have a soundtrack yet.”</p><span>— A.Tonic</span></div></div></section> }
+
+function AboutStrip() { return <section className="about-strip"><div className="container about-strip-inner"><div><div className="section-label"><span>03</span><span>The artist</span></div><h2>Feel it first.<br/><em>Then press play.</em></h2></div><div className="about-copy"><p>Akin S. Sokpah, known professionally as A.Tonic, is an independent artist building a body of work around vulnerability, rhythm and the lived experience.</p><Link href="/about" className="text-link">Read the full story <ArrowUpRight size={15}/></Link></div></div></section> }
+
+function LowerSection({ section }: { section: string }) { const content: Record<string, { title: string; kicker: string; body: string }> = { music: { title: "Music library", kicker: "Listen deeper", body: "Singles, originals and the sounds behind the story. The library is growing." }, releases: { title: "Releases", kicker: "The catalogue", body: "One release. No filler. Start with Tired — an emotional Afrobeat journey." }, videos: { title: "Videos", kicker: "Watch the feeling", body: "Visual stories from the world of A.Tonic. More is on the way." }, artwork: { title: "Artwork", kicker: "The visual language", body: "Images, textures and the visual world around every release." }, about: { title: "About A.Tonic", kicker: "The artist", body: "Akin S. Sokpah is A.Tonic — an independent artist making music for quiet battles and honest moments." }, licensing: { title: "License music", kicker: "For creators", body: "Use A.Tonic's music with clarity. Request a license, define the use and keep the work protected." }, search: { title: "Search", kicker: "Find something", body: "Search is ready for songs, releases, videos and artwork as the library grows." }, contact: { title: "Contact", kicker: "Get in touch", body: "For licensing, collaborations and professional enquiries: aki.sokpah.link@gmail.com" }, copyright: { title: "Copyright", kicker: "Rights & credits", body: "All music and creative work on this site is presented with its associated credits and rights information." } }; const item = content[section] ?? content.music; return <section className="inner-page container"><div className="eyebrow red-eyebrow">{item.kicker}</div><h1>{item.title}</h1><p>{item.body}</p><div className="inner-actions"><Link href="/" className="button button-dark">Back home <ArrowUpRight size={15}/></Link>{section === "licensing" && <a className="button button-red" href="mailto:aki.sokpah.link@gmail.com">Start an enquiry <ArrowUpRight size={15}/></a>}</div><div className="inner-empty"><Disc3 size={22}/><strong>No data beyond the official release.</strong><span>As A.Tonic's catalogue grows, it will appear here.</span></div></section> }
+
+export default function Home({ section }: HomeProps) { if (section) return <LowerSection section={section}/>; return <><Hero/><ReleaseFeature/><LatestGrid/><AboutStrip/><section className="cta-band"><div className="container"><div><span className="eyebrow">For filmmakers, creators & brands</span><h2>Make room for the right sound.</h2></div><Link href="/licensing" className="button button-red">Explore licensing <ArrowUpRight size={15}/></Link></div></section></> }
