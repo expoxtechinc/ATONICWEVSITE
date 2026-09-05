@@ -55,9 +55,9 @@ export const appRouter = router({
       if (error) throw new Error(error.message);
       return data;
     }),
-    create: protectedProcedure.input(z.object({ releaseId, licenseType: z.string().min(2), purpose: z.string().min(2), platform: z.string().optional(), permissions: z.array(z.string()).default([]), restrictions: z.array(z.string()).default([]), endDate: z.string().optional(), downloadRights: z.boolean().default(false), commercialRights: z.boolean().default(false), licenseeEmail: z.string().email().optional() })).mutation(async ({ input, ctx }) => {
+    create: publicProcedure.input(z.object({ releaseId, licenseType: z.string().min(2), purpose: z.string().min(2), platform: z.string().optional(), permissions: z.array(z.string()).default([]), restrictions: z.array(z.string()).default([]), endDate: z.string().optional(), downloadRights: z.boolean().default(false), commercialRights: z.boolean().default(false), licenseeEmail: z.string().email() })).mutation(async ({ input }) => {
       const supabase = getSupabaseAdmin();
-      const { data, error } = await supabase.from("licenses").insert({ ...input, release_id: input.releaseId, license_type: input.licenseType, licensee_email: input.licenseeEmail ?? ctx.user.email, platform: input.platform ?? null, end_date: input.endDate ?? null, download_rights: input.downloadRights, commercial_rights: input.commercialRights }).select("*").single();
+      const { data, error } = await supabase.from("licenses").insert({ release_id: input.releaseId, license_type: input.licenseType, purpose: input.purpose, licensee_email: input.licenseeEmail, platform: input.platform ?? null, permissions: input.permissions, restrictions: input.restrictions, end_date: input.endDate ?? null, download_rights: false, commercial_rights: false, status: "pending" }).select("*").single();
       if (error) throw new Error(error.message);
       return data;
     }),

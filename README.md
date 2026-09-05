@@ -2,6 +2,8 @@
 
 A production-oriented artist website and private studio for A.Tonic. The public site presents releases, visuals, licensing, and copyright information. The private studio manages uploads and release metadata.
 
+The public website is anonymous-access: visitors can listen, browse, submit licensing requests, and verify licenses without creating an account. Only the Google-authenticated account `aki.sokpah.link@gmail.com` can enter the admin studio or call admin upload procedures.
+
 ## Runtime integrations
 
 The app uses the Manus-authenticated Express/tRPC runtime for private studio access and Supabase for the music catalogue, private storage, licensing records, signed URLs, and download/play tracking.
