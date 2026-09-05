@@ -4,8 +4,9 @@ import { trpc } from "@/lib/trpc";
 import { ArrowDown, ArrowUpRight, ChevronRight, Disc3, Download, Headphones, Instagram, Music2, Pause, Play, Repeat2, ShieldCheck, Shuffle, SkipBack, SkipForward, Volume2, VolumeX, Youtube } from "lucide-react";
 
 type HomeProps = { section?: string };
-const studioImage = "/manus-storage/atonic-studio_cdfa93a4.jpg";
-const waveImage = "/manus-storage/atonic-wave_66e69cbb.jpg";
+const artistImage = "https://cdn.phototourl.com/free/2026-09-05-092ec7c7-6c94-45db-8068-12eec36719c7.png";
+const studioImage = artistImage;
+const waveImage = artistImage;
 
 function Player() { const [playing, setPlaying] = useState(false); const [muted, setMuted] = useState(false); const [progress, setProgress] = useState(34); const timer = useRef<number | null>(null); useEffect(() => { if (playing) timer.current = window.setInterval(() => setProgress(p => p >= 100 ? 0 : p + 1), 1500); return () => { if (timer.current) window.clearInterval(timer.current); }; }, [playing]); return <div className="player"><div className="player-art"><img src={waveImage} alt="Tired release artwork"/><div className="player-art-label">A.T.</div></div><div className="player-track"><div className="track-meta"><div><strong>Tired</strong><span>A.Tonic · Original</span></div><span className="track-time">{progress === 0 ? "0:00" : "1:12"} / 3:28</span></div><input aria-label="Seek track" type="range" min="0" max="100" value={progress} onChange={e => setProgress(Number(e.target.value))}/><div className="player-controls"><button aria-label="Shuffle"><Shuffle size={15}/></button><button aria-label="Previous"><SkipBack size={17}/></button><button className="play-button" onClick={() => setPlaying(!playing)} aria-label={playing ? "Pause" : "Play"}>{playing ? <Pause size={18}/> : <Play size={18} fill="currentColor"/>}</button><button aria-label="Next"><SkipForward size={17}/></button><button aria-label="Repeat"><Repeat2 size={15}/></button></div></div><div className="player-volume"><button onClick={() => setMuted(!muted)} aria-label="Mute">{muted ? <VolumeX size={17}/> : <Volume2 size={17}/>}</button><div className="volume-line"><span style={{width: muted ? "0%" : "64%"}}/></div></div></div> }
 

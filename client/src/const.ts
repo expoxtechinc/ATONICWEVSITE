@@ -15,6 +15,11 @@ export { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 export const startLogin = () => {
   const oauthPortalUrl = import.meta.env.VITE_OAUTH_PORTAL_URL;
   const appId = import.meta.env.VITE_APP_ID;
+  if (!oauthPortalUrl || !appId) {
+    console.error("Google sign-in is not configured: VITE_OAUTH_PORTAL_URL and VITE_APP_ID are required.");
+    window.alert("Google sign-in is not configured on this deployment yet. Add VITE_OAUTH_PORTAL_URL and VITE_APP_ID in Vercel, then redeploy.");
+    return;
+  }
   const redirectUri = `${window.location.origin}/api/oauth/callback`;
 
   const nonce = crypto.randomUUID();
@@ -29,3 +34,5 @@ export const startLogin = () => {
 
   window.location.href = url.toString();
 };
+
+export const isLoginConfigured = Boolean(import.meta.env.VITE_OAUTH_PORTAL_URL && import.meta.env.VITE_APP_ID);
