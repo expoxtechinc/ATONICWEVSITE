@@ -1,7 +1,14 @@
-import { startLogin } from "@/const";
-import { trpc } from "@/lib/trpc";
-import { TRPCClientError } from "@trpc/client";
-import { useCallback, useEffect, useMemo } from "react";
+import { supabase } from "@/lib/supabase";
+import type { Session, User as SupabaseUser } from "@supabase/supabase-js";
+import { useCallback, useEffect, useState } from "react";
+
+type Profile = {
+  id: string;
+  email: string;
+  full_name: string | null;
+  avatar_url: string | null;
+  role: "user" | "admin";
+};
 
 type UseAuthOptions = {
   redirectOnUnauthenticated?: boolean;
@@ -9,90 +16,76 @@ type UseAuthOptions = {
 };
 
 export function useAuth(options?: UseAuthOptions) {
-  // Login is started via startLogin() in the effect below, only when we actually
-  // navigate — never during render. startLogin() mints a one-time nonce + writes
-  // the state cookie, so calling it per render would overwrite the cookie and
-  // desync it from an in-flight login's `state`.
-  const { redirectOnUnauthenticated = false, redirectPath } = options ?? {};
-  const utils = trpc.useUtils();
+  const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<(SupabaseUser & { role?: Profile["role"]; full_name?: string | null; name?: string | null }) | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
 
-  const meQuery = trpc.auth.me.useQuery(undefined, {
-    retry: false,
-    refetchOnWindowFocus: false,
-  });
-
-  const logoutMutation = trpc.auth.logout.useMutation({
-    onSuccess: () => {
-      utils.auth.me.setData(undefined, null);
-    },
-  });
-
-  const logout = useCallback(async () => {
-    try {
-      await logoutMutation.mutateAsync();
-    } catch (error: unknown) {
-      if (
-        error instanceof TRPCClientError &&
-        error.data?.code === "UNAUTHORIZED"
-      ) {
-        return;
-      }
-      throw error;
-    } finally {
-      // Clear the Preview auto-login token mirrored into sessionStorage, so
-      // header-based sessions (Safari ITP / WebView) are logged out too. The
-      // backend cookie is cleared by the logout mutation.
-      try {
-        sessionStorage.removeItem("manus-cookie");
-      } catch {}
-      utils.auth.me.setData(undefined, null);
-      await utils.auth.me.invalidate();
+  const hydrate = useCallback(async (nextSession: Session | null) => {
+    setSession(nextSession);
+    if (!nextSession?.user) {
+      setUser(null);
+      return;
     }
-  }, [logoutMutation, utils]);
-
-  const state = useMemo(() => {
-    localStorage.setItem(
-      "manus-runtime-user-info",
-      JSON.stringify(meQuery.data)
-    );
-    return {
-      user: meQuery.data ?? null,
-      loading: meQuery.isLoading || logoutMutation.isPending,
-      error: meQuery.error ?? logoutMutation.error ?? null,
-      isAuthenticated: Boolean(meQuery.data),
-    };
-  }, [
-    meQuery.data,
-    meQuery.error,
-    meQuery.isLoading,
-    logoutMutation.error,
-    logoutMutation.isPending,
-  ]);
+    const { data: profile, error: profileError } = await supabase.from("profiles").select("id,email,full_name,avatar_url,role").eq("id", nextSession.user.id).maybeSingle();
+    if (profileError) {
+      setError(profileError);
+      setUser({ ...nextSession.user, role: "user", name: nextSession.user.user_metadata?.name ?? null });
+      return;
+    }
+    setUser({ ...nextSession.user, role: profile?.role === "admin" ? "admin" : "user", full_name: profile?.full_name ?? null, name: profile?.full_name ?? nextSession.user.user_metadata?.name ?? null });
+  }, []);
 
   useEffect(() => {
-    if (!redirectOnUnauthenticated) return;
-    if (meQuery.isLoading || logoutMutation.isPending) return;
-    if (state.user) return;
-    if (typeof window === "undefined") return;
-    if (redirectPath && window.location.pathname === redirectPath) return;
+    let mounted = true;
+    supabase.auth.getSession().then(({ data, error: sessionError }) => {
+      if (!mounted) return;
+      if (sessionError) setError(sessionError);
+      hydrate(data.session).finally(() => mounted && setLoading(false));
+    });
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      hydrate(nextSession).finally(() => mounted && setLoading(false));
+    });
+    return () => { mounted = false; listener.subscription.unsubscribe(); };
+  }, [hydrate]);
 
-    // Navigate at this moment only. startLogin() mints the nonce + cookie itself.
-    if (redirectPath) {
-      window.location.href = redirectPath;
-    } else {
-      startLogin();
-    }
-  }, [
-    redirectOnUnauthenticated,
-    redirectPath,
-    logoutMutation.isPending,
-    meQuery.isLoading,
-    state.user,
-  ]);
+  useEffect(() => {
+    if (!options?.redirectOnUnauthenticated || loading || user) return;
+    if (options.redirectPath && window.location.pathname !== options.redirectPath) window.location.href = options.redirectPath;
+  }, [loading, options, user]);
+
+  const logout = useCallback(async () => {
+    const { error: logoutError } = await supabase.auth.signOut();
+    if (logoutError) throw logoutError;
+  }, []);
+
+  const signInWithGoogle = useCallback(async () => {
+    const { error: signInError } = await supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo: `${window.location.origin}/admin` } });
+    if (signInError) throw signInError;
+  }, []);
+
+  const signInWithPassword = useCallback(async (email: string, password: string) => {
+    const result = await supabase.auth.signInWithPassword({ email, password });
+    if (result.error) throw result.error;
+    return result.data;
+  }, []);
+
+  const signUpWithPassword = useCallback(async (email: string, password: string) => {
+    const result = await supabase.auth.signUp({ email, password, options: { emailRedirectTo: window.location.origin } });
+    if (result.error) throw result.error;
+    return result.data;
+  }, []);
 
   return {
-    ...state,
-    refresh: () => meQuery.refetch(),
+    session,
+    user,
+    loading,
+    error,
+    isAuthenticated: Boolean(session?.user),
     logout,
+    signInWithGoogle,
+    signInWithPassword,
+    signUpWithPassword,
+    refresh: async () => { const result = await supabase.auth.getSession(); await hydrate(result.data.session); },
   };
 }

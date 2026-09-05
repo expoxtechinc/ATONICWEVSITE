@@ -6,7 +6,7 @@ The public website is anonymous-access: visitors can listen, browse, submit lice
 
 ## Runtime integrations
 
-The app uses the Manus-authenticated Express/tRPC runtime for private studio access and Supabase for the music catalogue, private storage, licensing records, signed URLs, and download/play tracking.
+The app uses Supabase Auth for Google OAuth, email/password authentication, persisted browser sessions, and server-side bearer-token validation. Supabase also stores the music catalogue, private storage, licensing records, signed URLs, and download/play tracking.
 
 The Supabase project contains these core tables:
 
@@ -26,11 +26,11 @@ Set these in the Vercel project settings for Preview and Production:
 - `SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY` — server-only; never expose it as a `VITE_` variable
 - `JWT_SECRET`
-- `OAUTH_SERVER_URL`
-- `VITE_APP_ID`
-- `OWNER_OPEN_ID`
+- `JWT_SECRET` — retained for server runtime compatibility; Supabase access tokens are the authentication source
 
 `vercel.json` routes `/api/*` to the Express/tRPC serverless entrypoint and serves the Vite output from `dist/public`.
+
+The repository template is [`ENVIRONMENT.example`](./ENVIRONMENT.example). Copy its four entries into Vercel; no Manus application ID, OAuth portal URL, OAuth server URL, or owner open ID is used anywhere in the active application.
 
 ## Workflows now connected
 
@@ -51,8 +51,10 @@ pnpm build
 
 ## Production checklist
 
-First, open Vercel Project Settings → Environment Variables and add `VITE_APP_ID`, `VITE_OAUTH_PORTAL_URL`, `OAUTH_SERVER_URL`, `JWT_SECRET`, `OWNER_OPEN_ID`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` for Production and Preview. Do not prefix the service-role key with `VITE_`.
+First, open Vercel Project Settings → Environment Variables and add only `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, and `JWT_SECRET` for Production and Preview. The Vite configuration exposes only the public URL and anon key to the browser; the service-role key remains server-only.
 
-Next, open the Manus OAuth application settings and add the exact callback URL `https://YOUR-DOMAIN.com/api/oauth/callback`. If the project uses a custom domain, use that domain rather than the Vercel preview URL. Ensure the OAuth portal has Google enabled, then redeploy Vercel so the Vite variables are embedded into the client build.
+Next, open Supabase Dashboard → Authentication → Providers → Google, enable Google, and configure the Google OAuth client. Set the Supabase callback URL shown in the provider screen, normally `https://YOUR_PROJECT_REF.supabase.co/auth/v1/callback`, in Google Cloud Console. Add `https://YOUR-DOMAIN.com/**` to Supabase Authentication → URL Configuration → Redirect URLs. Enable Email provider if email/password login is required.
 
-After deployment, visit the public homepage in an incognito window. Confirm that the homepage, release images, `/licensing`, and `/verify-license/[license-id]` work without sign-in. Then visit `/admin`, click **Continue with Google**, sign in as `aki.sokpah.link@gmail.com`, and confirm that `/admin/upload` opens. Test a second Google account and confirm it is rejected. Finally, upload one small MP3 in the studio, confirm it appears as a draft, and check Supabase Storage → `full_audio` for the private object.
+Google sign-in cannot become active from application code alone. The current Supabase project reports Email enabled and Google disabled, so the Google client ID and secret must be entered in Supabase Dashboard → Authentication → Providers → Google before the Google button can complete an OAuth flow.
+
+After deployment, visit the public homepage in an incognito window. Confirm that the homepage, release images, `/licensing`, and `/verify-license/[license-id]` work without sign-in. Then visit `/admin`, click **Continue with Google**, sign in as `aki.sokpah.link@gmail.com`, and confirm that `/admin/upload` opens. The `profiles` trigger automatically assigns that email the `admin` role; every other account receives `user` and is rejected by server-side `adminProcedure` checks. Test email/password login as well, then upload one small MP3 and verify the private object in Supabase Storage → `full_audio`.

@@ -1,0 +1,8 @@
+# Required in Vercel Production and Preview
+SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
+SUPABASE_ANON_KEY=your-public-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-server-only-service-role-key
+JWT_SECRET=replace-with-a-long-random-string
+
+# No legacy platform credentials are required.
+# The Vite build exposes SUPABASE_URL and SUPABASE_ANON_KEY to the browser automatically.

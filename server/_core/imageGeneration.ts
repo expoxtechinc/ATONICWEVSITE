@@ -15,8 +15,8 @@
  *     }]
  *   });
  */
-import { storagePut } from "server/storage";
 import { ENV } from "./env";
+import { getSupabaseAdmin } from "../supabase";
 
 // Default model for generated sites. "MODEL_GPT_IMAGE_2" is the forge images.v1
 // enum for GPT Image 2 (id: gpt-image-2). If omitted, forge falls back to Gemini 2.5 Flash.
@@ -95,14 +95,12 @@ export async function generateImage(
   const base64Data = result.image.b64Json;
   const buffer = Buffer.from(base64Data, "base64");
 
-  // Save to S3
-  const { url } = await storagePut(
-    `generated/${Date.now()}.png`,
-    buffer,
-    result.image.mimeType
-  );
+  const path = `generated/${Date.now()}.png`;
+  const { error: uploadError } = await getSupabaseAdmin().storage.from("artwork").upload(path, buffer, { contentType: result.image.mimeType, upsert: false });
+  if (uploadError) throw new Error(`Supabase image upload failed: ${uploadError.message}`);
+  const { data: signed } = await getSupabaseAdmin().storage.from("artwork").createSignedUrl(path, 3600);
   return {
-    url,
+    url: signed?.signedUrl,
   };
 }
 
