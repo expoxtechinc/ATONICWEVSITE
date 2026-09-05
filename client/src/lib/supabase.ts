@@ -11,6 +11,7 @@ export const supabase = createClient(url || "https://placeholder.supabase.co", a
   auth: {
     persistSession: true,
     autoRefreshToken: true,
-    detectSessionInUrl: true,
+    // The dedicated /auth/callback route exchanges the PKCE code exactly once.
+    detectSessionInUrl: false,
   },
 });

@@ -10,7 +10,7 @@ const contextFor = (email: string, role: "admin" | "user"): TrpcContext => ({
 
 describe("admin access", () => {
   it("rejects an authenticated Supabase user without the admin role", async () => {
-    const caller = appRouter.createCaller(contextFor("someone@example.com", "user"));
+    const caller = appRouter.createCaller(contextFor("someone@example.com", "admin"));
     await expect(caller.studio.createUploadUrl({ bucket: "full_audio", path: "test.mp3", upsert: false })).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
 

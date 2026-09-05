@@ -26,6 +26,12 @@ export const appRouter = router({
       if (error) throw new Error(error.message);
       return data;
     }),
+    adminList: adminProcedure.query(async () => {
+      const supabase = getSupabaseAdmin();
+      const { data, error } = await supabase.from("releases").select("id,title,artist,genre,release_type,status,release_date,artwork_path,created_at,updated_at").order("created_at", { ascending: false }).limit(200);
+      if (error) throw new Error(error.message);
+      return data ?? [];
+    }),
   }),
   profile: router({
     public: publicProcedure.query(async () => {
