@@ -7,7 +7,7 @@
   "theme_color": "#11100f",
   "description": "Official A.Tonic artist website.",
   "icons": [
-    { "src": "https://cdn.phototourl.com/free/2026-09-05-d6c504fc-033c-4588-a22b-2a7b2cb9db14.jpg", "sizes": "192x192", "type": "image/jpeg" },
-    { "src": "https://cdn.phototourl.com/free/2026-09-05-d6c504fc-033c-4588-a22b-2a7b2cb9db14.jpg", "sizes": "512x512", "type": "image/jpeg" }
+    { "src": "https://cdn.phototourl.com/free/2026-09-05-3d19c965-bf86-4386-b751-40a4658098bd.jpg", "sizes": "192x192", "type": "image/jpeg" },
+    { "src": "https://cdn.phototourl.com/free/2026-09-05-3d19c965-bf86-4386-b751-40a4658098bd.jpg", "sizes": "512x512", "type": "image/jpeg" }
   ]
 }
