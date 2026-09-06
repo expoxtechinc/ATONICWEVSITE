@@ -2,7 +2,7 @@
 
 A production-oriented artist website and private studio for A.Tonic. The public site presents releases, visuals, licensing, and copyright information. The private studio manages uploads and release metadata.
 
-The public website is anonymous-access: visitors can listen, browse, submit licensing requests, and verify licenses without creating an account. Only the Google-authenticated account `aki.sokpah.link@gmail.com` can enter the admin studio or call admin upload procedures.
+The public website is anonymous-access: visitors can listen, browse, submit licensing requests, and verify licenses without creating an account. Only the Google-authenticated account `morrisadicialg@gmail.com` can enter the admin studio or call admin upload procedures.
 
 ## Runtime integrations
 
@@ -55,6 +55,6 @@ First, open Vercel Project Settings → Environment Variables and add only `SUPA
 
 Next, open Supabase Dashboard → Authentication → Providers → Google, enable Google, and configure the Google OAuth client. Set the Supabase callback URL shown in the provider screen, normally `https://YOUR_PROJECT_REF.supabase.co/auth/v1/callback`, in Google Cloud Console. Add `https://YOUR-DOMAIN.com/**` to Supabase Authentication → URL Configuration → Redirect URLs. Enable Email provider if email/password login is required.
 
-Google sign-in cannot become active from application code alone. The current Supabase project reports Email enabled and Google disabled, so the Google client ID and secret must be entered in Supabase Dashboard → Authentication → Providers → Google before the Google button can complete an OAuth flow.
+Google sign-in requires the Google provider to remain enabled in Supabase Dashboard → Authentication → Providers → Google, with the production callback and redirect URLs configured.
 
-After deployment, visit the public homepage in an incognito window. Confirm that the homepage, release images, `/licensing`, and `/verify-license/[license-id]` work without sign-in. Then visit `/admin`, click **Continue with Google**, sign in as `aki.sokpah.link@gmail.com`, and confirm that `/admin/upload` opens. The `profiles` trigger automatically assigns that email the `admin` role; every other account receives `user` and is rejected by server-side `adminProcedure` checks. Test email/password login as well, then upload one small MP3 and verify the private object in Supabase Storage → `full_audio`.
+After deployment, visit the public homepage in an incognito window. Confirm that the homepage, release images, `/licensing`, and `/verify-license/[license-id]` work without sign-in. Then visit `/admin`, click **Continue with Google**, sign in as `morrisadicialg@gmail.com`, and confirm that `/admin/upload` opens. The `profiles` trigger automatically assigns that email the `admin` role; every other account receives `user` and is rejected by server-side `adminProcedure` checks. Test email/password login as well, then upload one small MP3 and verify the private object in Supabase Storage → `full_audio`.

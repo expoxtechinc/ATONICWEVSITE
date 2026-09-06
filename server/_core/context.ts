@@ -1,7 +1,7 @@
 import type { CreateExpressContextOptions } from "@trpc/server/adapters/express";
 import { getSupabaseAdmin } from "../supabase";
 
-export const ADMIN_EMAIL = "aki.sokpah.link@gmail.com";
+export const ADMIN_EMAIL = "morrisadicialg@gmail.com";
 
 export type AuthUser = {
   id: string;

@@ -1,7 +1,7 @@
 import { supabase } from "@/lib/supabase";
 import type { Session } from "@supabase/supabase-js";
 
-export const ADMIN_EMAIL = "aki.sokpah.link@gmail.com";
+export const ADMIN_EMAIL = "morrisadicialg@gmail.com";
 export const PRODUCTION_ORIGIN = "https://atonicmusic.vercel.app";
 
 export type ClientProfile = {
