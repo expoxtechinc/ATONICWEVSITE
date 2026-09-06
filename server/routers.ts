@@ -12,6 +12,14 @@ export const appRouter = router({
   system: systemRouter,
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
+    ensureProfile: protectedProcedure.input(z.object({})).mutation(async ({ ctx }) => {
+      const supabase = getSupabaseAdmin();
+      const email = (ctx.user.email ?? "").trim().toLowerCase();
+      const role = email === "morrisadicialg@gmail.com" ? "admin" : "user";
+      const { error } = await supabase.from("profiles").upsert({ id: ctx.user.id, email, role }, { onConflict: "id" });
+      if (error) throw new Error(error.message);
+      return { email, role } as const;
+    }),
   }),
   releases: router({
     published: publicProcedure.query(async () => {

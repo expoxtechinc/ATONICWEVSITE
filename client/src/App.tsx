@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, Route, Switch, useLocation, useRoute } from "wouter";
 import { Music2, LayoutDashboard, Library, Image, Video, ShieldCheck, Settings, Search, Menu, X, Play, Pause, ExternalLink, ArrowUpRight, Disc3, Download, FileText, Activity, Fingerprint, LogIn } from "lucide-react";
 import Home from "@/pages/Home";
@@ -44,13 +44,18 @@ function PublicFooter() { return <footer className="site-footer"><div><div class
 function PublicLayout({ children }: { children: React.ReactNode }) { return <div className="public-shell"><PublicHeader/><main>{children}</main><PublicFooter/></div> }
 
 function AuthCallback() {
+  const ensureProfile = trpc.auth.ensureProfile.useMutation();
+  const started = useRef(false);
   useEffect(() => {
+    if (started.current) return;
+    started.current = true;
     let active = true;
     const finish = async () => {
       try {
         const code = new URLSearchParams(window.location.search).get("code");
         if (code) await supabase.auth.exchangeCodeForSession(code);
         const { data } = await supabase.auth.getSession();
+        if (data.session) await ensureProfile.mutateAsync({});
         const resolved = await getSessionProfile(data.session);
         if (!active) return;
         const next = new URLSearchParams(window.location.search).get("next");
@@ -62,7 +67,7 @@ function AuthCallback() {
     };
     void finish();
     return () => { active = false; };
-  }, []);
+  }, [ensureProfile]);
   return <div className="admin-auth-screen"><div className="admin-auth-card"><img src={logo} alt="A.Tonic"/><p>Finishing secure sign-in…</p></div></div>;
 }
 
