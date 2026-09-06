@@ -52,17 +52,26 @@ function AuthCallback() {
     let active = true;
     const finish = async () => {
       try {
-        const code = new URLSearchParams(window.location.search).get("code");
-        if (code) await supabase.auth.exchangeCodeForSession(code);
-        const { data } = await supabase.auth.getSession();
-        if (data.session) await ensureProfile.mutateAsync({});
+        const params = new URLSearchParams(window.location.search);
+        const code = params.get("code");
+        if (code) {
+          const exchanged = await supabase.auth.exchangeCodeForSession(code);
+          if (exchanged.error) throw exchanged.error;
+        }
+        const { data, error: sessionError } = await supabase.auth.getSession();
+        if (sessionError) throw sessionError;
+        if (!data.session) throw new Error("Supabase did not return an authenticated session.");
+        const bootstrapped = await ensureProfile.mutateAsync({});
         const resolved = await getSessionProfile(data.session);
         if (!active) return;
-        const next = new URLSearchParams(window.location.search).get("next");
+        const next = params.get("next");
         const safeNext = next?.startsWith("/admin") ? next : "/admin";
-        window.location.replace(resolved.isAdmin ? safeNext : "/");
-      } catch {
-        if (active) window.location.replace("/admin?auth_error=callback");
+        window.location.replace(resolved.isAdmin && bootstrapped.role === "admin" ? safeNext : "/admin?auth_error=not_admin");
+      } catch (error) {
+        if (active) {
+          const message = error instanceof Error ? error.message : "Authentication callback failed";
+          window.location.replace(`/admin?auth_error=${encodeURIComponent(message.slice(0, 160))}`);
+        }
       }
     };
     void finish();
@@ -78,7 +87,7 @@ function AdminLayout({ children }: { children: React.ReactNode }) {
  const [authEmail, setAuthEmail] = useState("");
  const [authPassword, setAuthPassword] = useState("");
  const [authMode, setAuthMode] = useState<"sign-in" | "sign-up">("sign-in");
- const [authError, setAuthError] = useState("");
+ const [authError, setAuthError] = useState(() => new URLSearchParams(window.location.search).get("auth_error") ?? "");
  const items = [["Overview", "/admin", LayoutDashboard], ["Music library", "/admin/music", Library], ["Upload studio", "/admin/upload", Download], ["Artwork", "/admin/artwork", Image], ["Videos", "/admin/videos", Video], ["Licenses", "/admin/licenses", ShieldCheck], ["Audio tracking", "/admin/tracking", Activity], ["Fingerprints", "/admin/fingerprints", Fingerprint], ["Settings", "/admin/settings", Settings]] as const;
  if (loading) return <div className="admin-auth-screen"><div className="admin-auth-card"><img src={logo} alt="A.Tonic"/><p>Loading studio…</p></div></div>;
  if (!isAuthenticated || !isAdmin) return <div className="admin-auth-screen"><div className="admin-auth-card"><img src={logo} alt="A.Tonic"/><span className="eyebrow">Private workspace</span><h1>A.Tonic Studio</h1>{isAuthenticated ? <><p>This account is authenticated but does not have the administrator role.</p><button className="button button-dark" onClick={() => logout()}><LogIn size={16}/> Sign out</button></> : <><p>Sign in with Google or use your Supabase email account.</p><button className="button button-dark" onClick={() => signInWithGoogle()}><LogIn size={16}/> Continue with Google</button><div className="auth-divider">or email and password</div><form className="auth-form" onSubmit={async event => { event.preventDefault(); setAuthError(""); try { if (authMode === "sign-in") await signInWithPassword(authEmail, authPassword); else await signUpWithPassword(authEmail, authPassword); } catch (error) { setAuthError(error instanceof Error ? error.message : "Authentication failed"); } }}><input type="email" required value={authEmail} onChange={event => setAuthEmail(event.target.value)} placeholder="Email address"/><input type="password" required minLength={6} value={authPassword} onChange={event => setAuthPassword(event.target.value)} placeholder="Password"/><button className="button button-light" type="submit">{authMode === "sign-in" ? "Sign in" : "Create account"}</button></form><button className="auth-switch" onClick={() => setAuthMode(authMode === "sign-in" ? "sign-up" : "sign-in")}>{authMode === "sign-in" ? "Need an account? Sign up" : "Already have an account? Sign in"}</button>{authError && <small className="auth-config-warning">{authError}</small>}</>}<Link href="/" className="text-link">Back to website</Link></div></div>;
