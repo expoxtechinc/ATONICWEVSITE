@@ -54,11 +54,24 @@ function AuthCallback() {
       try {
         const params = new URLSearchParams(window.location.search);
         const code = params.get("code");
+        const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+        const providerError = params.get("error_description") ?? hashParams.get("error_description") ?? params.get("error") ?? hashParams.get("error");
+        if (providerError) throw new Error(providerError.replace(/\+/g, " "));
         if (code) {
           const exchanged = await supabase.auth.exchangeCodeForSession(code);
           if (exchanged.error) throw exchanged.error;
+        } else if (hashParams.get("access_token") && hashParams.get("refresh_token")) {
+          const restored = await supabase.auth.setSession({
+            access_token: hashParams.get("access_token")!,
+            refresh_token: hashParams.get("refresh_token")!,
+          });
+          if (restored.error) throw restored.error;
         }
-        const { data, error: sessionError } = await supabase.auth.getSession();
+        let { data, error: sessionError } = await supabase.auth.getSession();
+        for (let attempt = 0; !data.session && !sessionError && attempt < 3; attempt += 1) {
+          await new Promise(resolve => window.setTimeout(resolve, 150 * (attempt + 1)));
+          ({ data, error: sessionError } = await supabase.auth.getSession());
+        }
         if (sessionError) throw sessionError;
         if (!data.session) throw new Error("Supabase did not return an authenticated session.");
         const bootstrapped = await ensureProfile.mutateAsync({});
