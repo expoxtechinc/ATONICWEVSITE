@@ -13,6 +13,26 @@ import { getSessionProfile } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 
 const logo = "https://cdn.phototourl.com/free/2026-09-05-3d19c965-bf86-4386-b751-40a4658098bd.jpg";
+let oauthExchangeCode: string | null = null;
+let oauthExchangePromise: Promise<void> | null = null;
+
+async function exchangeOAuthCodeOnce(code: string) {
+  const current = await supabase.auth.getSession();
+  if (current.data.session) return;
+  if (oauthExchangeCode === code && oauthExchangePromise) return oauthExchangePromise;
+  oauthExchangeCode = code;
+  oauthExchangePromise = (async () => {
+    const exchanged = await supabase.auth.exchangeCodeForSession(code);
+    if (exchanged.error) throw exchanged.error;
+  })();
+  try {
+    await oauthExchangePromise;
+  } catch (error) {
+    oauthExchangeCode = null;
+    oauthExchangePromise = null;
+    throw error;
+  }
+}
 
 function PageTransition({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
@@ -58,8 +78,7 @@ function AuthCallback() {
         const providerError = params.get("error_description") ?? hashParams.get("error_description") ?? params.get("error") ?? hashParams.get("error");
         if (providerError) throw new Error(providerError.replace(/\+/g, " "));
         if (code) {
-          const exchanged = await supabase.auth.exchangeCodeForSession(code);
-          if (exchanged.error) throw exchanged.error;
+          await exchangeOAuthCodeOnce(code);
         } else if (hashParams.get("access_token") && hashParams.get("refresh_token")) {
           const restored = await supabase.auth.setSession({
             access_token: hashParams.get("access_token")!,
